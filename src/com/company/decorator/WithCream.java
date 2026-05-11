@@ -9,11 +9,11 @@ public class WithCream extends AddonDecorator {
 
     @Override
     public String getName() {
-        return wrapped.getName() + " со сливками";
+        return wrappedDrink().getName() + " со сливками";
     }
 
     @Override
     public int getPrice() {
-        return wrapped.getPrice() + 5;
+        return wrappedDrink().getPrice() + 5;
     }
 }

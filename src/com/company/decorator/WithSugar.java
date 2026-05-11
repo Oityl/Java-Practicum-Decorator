@@ -9,11 +9,11 @@ public class WithSugar extends AddonDecorator {
 
     @Override
     public String getName() {
-        return wrapped.getName() + " с сахаром";
+        return wrappedDrink().getName() + " с сахаром";
     }
 
     @Override
     public int getPrice() {
-        return wrapped.getPrice() + 2;
+        return wrappedDrink().getPrice() + 2;
     }
 }

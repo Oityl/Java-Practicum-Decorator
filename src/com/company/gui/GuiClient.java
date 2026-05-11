@@ -74,6 +74,16 @@ public class GuiClient extends JFrame {
         };
         itemsTable = styledTable(itemsModel);
 
+        itemsTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = itemsTable.getSelectedRow();
+                if (row >= 0) {
+                    String itemId = itemsModel.getValueAt(row, 0).toString();
+                    tfItemId.setText(itemId);
+                }
+            }
+        });
+
         logArea = new JTextArea(5, 0);
         logArea.setEditable(false);
         logArea.setBackground(new Color(0x1A0F05));
@@ -119,6 +129,12 @@ public class GuiClient extends JFrame {
 
         p.add(Box.createVerticalStrut(16));
         p.add(sectionLabel("✨ Добавка к позиции"));
+
+        JLabel hintLabel = new JLabel("  ← кликни на позицию в таблице");
+        hintLabel.setForeground(TEXT_DIM);
+        hintLabel.setFont(hintLabel.getFont().deriveFont(Font.ITALIC, 10f));
+        hintLabel.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(hintLabel);
         p.add(labeledRow("ID позиции:", tfItemId));
         p.add(labeledRow("Добавка:", cbMod));
         p.add(Box.createVerticalStrut(6));
@@ -148,7 +164,6 @@ public class GuiClient extends JFrame {
         p.add(Box.createVerticalGlue());
 
         updateButtonStates(true);
-
         return p;
     }
 
@@ -268,7 +283,7 @@ public class GuiClient extends JFrame {
         }
         final String itemIdStr = tfItemId.getText().trim();
         if (itemIdStr.isEmpty()) {
-            log("Введите ID позиции");
+            log("Кликните на позицию в нижней таблице");
             return;
         }
         final String mod = (String) cbMod.getSelectedItem();
@@ -296,7 +311,6 @@ public class GuiClient extends JFrame {
         }
         final int oid = selectedOrderId;
         updateButtonStates(true);
-
         new Thread(new Runnable() {
             public void run() {
                 final String res = post("/orders/" + oid + "/confirm", "{}");
@@ -351,6 +365,7 @@ public class GuiClient extends JFrame {
                 ordersModel.getValueAt(row, 0).toString());
         selectedLabel.setText("🥤 Позиции заказа #" + selectedOrderId);
         itemsModel.setRowCount(0);
+        tfItemId.setText("");
 
         String status = ordersModel.getValueAt(row, 3).toString();
         updateButtonStates("confirmed".equals(status));
@@ -600,7 +615,7 @@ public class GuiClient extends JFrame {
         return row;
     }
 
-    // Точка входа
+    // Endpoint
     public static void launch() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
