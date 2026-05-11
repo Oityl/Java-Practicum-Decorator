@@ -1,5 +1,7 @@
 package com.company;
 
+import com.company.api.RestServer;
+import com.company.gui.GuiClient;
 import com.company.model.*;
 import com.company.decorator.*;
 
@@ -18,13 +20,10 @@ public class Main {
 
         Drink order1 = new WithCinnamon(new WithSugar(new WithMilk(new Tea())));
         TavernOrder.printOrder(order1);
-
         Drink order2 = new WithSugar(new WithCream(new Coffee()));
         TavernOrder.printOrder(order2);
-
         Drink order3 = new Mead();
         TavernOrder.printOrder(order3);
-
         Drink order4 = new WithCinnamon(new WithMilk(new Coffee()));
         TavernOrder.printOrder(order4);
 
@@ -34,5 +33,14 @@ public class Main {
         } catch (IllegalStateException e) {
             System.out.println("Отказ: " + e.getMessage());
         }
+
+        try {
+            RestServer.start(8080);
+        } catch (Exception e) {
+            System.err.println("Не удалось запустить сервер: " + e.getMessage());
+            return;
+        }
+
+        GuiClient.launch();
     }
 }
