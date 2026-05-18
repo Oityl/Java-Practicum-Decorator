@@ -8,12 +8,12 @@ public class WithCream extends AddonDecorator {
     }
 
     @Override
-    public String getName() {
-        return wrappedDrink().getName() + " со сливками";
+    protected String getAddonName() {
+        return " со сливками";
     }
 
     @Override
-    public int getPrice() {
-        return wrappedDrink().getPrice() + 5;
+    protected int getAddonPrice() {
+        return 5;
     }
 }

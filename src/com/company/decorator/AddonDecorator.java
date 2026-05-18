@@ -15,12 +15,21 @@ public abstract class AddonDecorator implements Drink {
         this.wrapped = drink;
     }
 
-    protected final Drink wrappedDrink() {
-        return wrapped;
+    @Override
+    public final String getName() {
+        return wrapped.getName() + getAddonName();
     }
 
     @Override
-    public int getAddonCount() {
+    public final int getPrice() {
+        return wrapped.getPrice() + getAddonPrice();
+    }
+
+    @Override
+    public final int getAddonCount() {
         return wrapped.getAddonCount() + 1;
     }
+
+    protected abstract String getAddonName();
+    protected abstract int getAddonPrice();
 }
