@@ -8,12 +8,12 @@ public class WithMilk extends AddonDecorator {
     }
 
     @Override
-    public String getName() {
-        return wrapped.getName() + " с молоком";
+    protected String getAddonName() {
+        return " с молоком";
     }
 
     @Override
-    public int getPrice() {
-        return wrapped.getPrice() + 3;
+    protected int getAddonPrice() {
+        return 3;
     }
 }

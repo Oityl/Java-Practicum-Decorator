@@ -8,12 +8,12 @@ public class WithCinnamon extends AddonDecorator {
     }
 
     @Override
-    public String getName() {
-        return wrapped.getName() + " с корицей";
+    protected String getAddonName() {
+        return " с корицей";
     }
 
     @Override
-    public int getPrice() {
-        return wrapped.getPrice() + 4;
+    protected int getAddonPrice() {
+        return 4;
     }
 }

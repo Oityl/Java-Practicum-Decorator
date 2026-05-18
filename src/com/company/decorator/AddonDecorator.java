@@ -2,12 +2,11 @@ package com.company.decorator;
 
 import com.company.model.Drink;
 
-
 public abstract class AddonDecorator implements Drink {
 
     private static final int MAX_ADDONS = 3;
 
-    protected final Drink wrapped;
+    private final Drink wrapped;
 
     protected AddonDecorator(Drink drink) {
         if (drink.getAddonCount() >= MAX_ADDONS) {
@@ -17,7 +16,20 @@ public abstract class AddonDecorator implements Drink {
     }
 
     @Override
-    public int getAddonCount() {
+    public final String getName() {
+        return wrapped.getName() + getAddonName();
+    }
+
+    @Override
+    public final int getPrice() {
+        return wrapped.getPrice() + getAddonPrice();
+    }
+
+    @Override
+    public final int getAddonCount() {
         return wrapped.getAddonCount() + 1;
     }
+
+    protected abstract String getAddonName();
+    protected abstract int getAddonPrice();
 }
