@@ -6,10 +6,7 @@ import java.util.List;
 
 public class Order {
 
-    public enum Status {
-        DRAFT,
-        CONFIRMED
-    }
+    public enum Status {DRAFT, CONFIRMED}
 
     private static int idSequence = 1;
 

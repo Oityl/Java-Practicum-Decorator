@@ -1,14 +1,14 @@
 package com.company.model;
 
-public class Tea implements Drink {
+public class NordicStew implements Dish {
     @Override
     public String getName() {
-        return "Чай";
+        return "Нордское рагу";
     }
 
     @Override
     public int getPrice() {
-        return 5;
+        return 50;
     }
 
     @Override

@@ -5,25 +5,40 @@ import com.company.model.*;
 import com.company.repository.OrderRepository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 public class OrderService {
 
     private static final int MAX_ADDONS = 3;
+
+    private static final Map<String, Function<Dish, Dish>> MOD_REGISTRY = new LinkedHashMap<>();
+
+    static {
+        MOD_REGISTRY.put("fire_sauce", WithFireSauce::new);
+        MOD_REGISTRY.put("огненный соус", WithFireSauce::new);
+        MOD_REGISTRY.put("double_deer", WithDoubleDeer::new);
+        MOD_REGISTRY.put("двойная порция оленины", WithDoubleDeer::new);
+        MOD_REGISTRY.put("snow_berries", WithSnowBerries::new);
+        MOD_REGISTRY.put("снежные ягоды", WithSnowBerries::new);
+        MOD_REGISTRY.put("nordic_bread", WithNordicBread::new);
+        MOD_REGISTRY.put("нордская лепёшка", WithNordicBread::new);
+    }
 
     private final OrderRepository repo = OrderRepository.getInstance();
 
     public Order createOrder(int tableNumber, String guestName) {
         if (tableNumber < 1 || tableNumber > 20)
             throw new IllegalArgumentException("Номер стола должен быть от 1 до 20");
-        Order order = new Order(tableNumber, guestName);
-        return repo.save(order);
+        return repo.save(new Order(tableNumber, guestName));
     }
 
-    public OrderItem addDish(int orderId, Drink drink, int quantity) {
+    public OrderItem addDish(int orderId, int quantity) {
         Order order = getDraftOrder(orderId);
         if (quantity < 1) throw new IllegalArgumentException("quantity должен быть ≥ 1");
-        OrderItem item = new OrderItem(drink, quantity);
+        OrderItem item = new OrderItem(new NordicStew(), quantity);
         order.getItems().add(item);
         return item;
     }
@@ -35,19 +50,16 @@ public class OrderService {
         if (item.getAddonCount() >= MAX_ADDONS)
             throw new IllegalStateException("Нельзя добавить более " + MAX_ADDONS + " добавок в одно блюдо");
 
-        Drink decorated = applyDecorator(item.getDrink(), modType);
-        item.setDrink(decorated);
+        Dish decorated = applyDecorator(item.getDish(), modType);
+        item.setDish(decorated);
         item.addModName(modType);
         return item;
     }
 
-    public OrderItem updateItem(int orderId, int itemId, Drink newDrink, Integer newQuantity, List<String> newMods) {
+    public OrderItem updateItem(int orderId, int itemId, Integer newQuantity, List<String> newMods) {
         Order order = getDraftOrder(orderId);
         OrderItem item = getItem(order, itemId);
 
-        if (newDrink != null) {
-            item.setDrink(newDrink);
-        }
         if (newQuantity != null) {
             if (newQuantity < 1) throw new IllegalArgumentException("quantity ≥ 1");
             item.setQuantity(newQuantity);
@@ -55,10 +67,9 @@ public class OrderService {
         if (newMods != null) {
             if (newMods.size() > MAX_ADDONS)
                 throw new IllegalStateException("Максимум " + MAX_ADDONS + " добавок");
-
-            item.setDrink(item.getDrink());
+            item.setDish(new NordicStew());
             for (String mod : newMods) {
-                item.setDrink(applyDecorator(item.getDrink(), mod));
+                item.setDish(applyDecorator(item.getDish(), mod));
                 item.addModName(mod);
             }
         }
@@ -73,9 +84,24 @@ public class OrderService {
         return order;
     }
 
+    public static Map<String, Integer> getAvailableModifications() {
+        Map<String, Integer> mods = new LinkedHashMap<>();
+        mods.put("Огненный соус", 40);
+        mods.put("Двойная порция оленины", 20);
+        mods.put("Снежные ягоды", 6);
+        mods.put("Нордская лепёшка", 7);
+        return mods;
+    }
+
+    private Dish applyDecorator(Dish dish, String type) {
+        Function<Dish, Dish> factory = MOD_REGISTRY.get(type.toLowerCase());
+        if (factory == null)
+            throw new IllegalArgumentException("Неизвестная добавка: " + type);
+        return factory.apply(dish);
+    }
+
     private Order getDraftOrder(int orderId) {
-        Order order = repo.findById(orderId)
-                .orElseThrow(() -> new NoSuchElementException("Заказ #" + orderId + " не найден"));
+        Order order = repo.findById(orderId).orElseThrow(() -> new NoSuchElementException("Заказ #" + orderId + " не найден"));
         if (order.getStatus() == Order.Status.CONFIRMED)
             throw new IllegalStateException("Заказ #" + orderId + " уже подтверждён");
         return order;
@@ -86,24 +112,5 @@ public class OrderService {
                 .filter(i -> i.getId() == itemId)
                 .findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Позиция #" + itemId + " не найдена"));
-    }
-
-    private Drink applyDecorator(Drink drink, String type) {
-        switch (type.toLowerCase()) {
-            case "cinnamon":
-            case "корица":
-                return new WithCinnamon(drink);
-            case "cream":
-            case "сливки":
-                return new WithCream(drink);
-            case "milk":
-            case "молоко":
-                return new WithMilk(drink);
-            case "sugar":
-            case "сахар":
-                return new WithSugar(drink);
-            default:
-                throw new IllegalArgumentException("Неизвестная добавка: " + type);
-        }
     }
 }

@@ -1,6 +1,6 @@
 package com.company.model;
 
-public interface Drink {
+public interface Dish {
     String getName();
 
     int getPrice();

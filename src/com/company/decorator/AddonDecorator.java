@@ -1,18 +1,18 @@
 package com.company.decorator;
 
-import com.company.model.Drink;
+import com.company.model.Dish;
 
-public abstract class AddonDecorator implements Drink {
+public abstract class AddonDecorator implements Dish {
 
     private static final int MAX_ADDONS = 3;
 
-    private final Drink wrapped;
+    private final Dish wrapped;
 
-    protected AddonDecorator(Drink drink) {
-        if (drink.getAddonCount() >= MAX_ADDONS) {
+    protected AddonDecorator(Dish dish) {
+        if (dish.getAddonCount() >= MAX_ADDONS) {
             throw new IllegalStateException("Нельзя добавить более " + MAX_ADDONS + " добавок в один заказ!");
         }
-        this.wrapped = drink;
+        this.wrapped = dish;
     }
 
     @Override

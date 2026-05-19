@@ -1,10 +1,11 @@
 package com.company.gui;
 
+import java.util.Arrays;
+
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -33,13 +34,16 @@ public class GuiClient extends JFrame {
     private final JTextArea logArea;
 
     private final JTextField tfTable = styledField("1");
-    private final JTextField tfGuest = styledField("Геральт");
-    private final JComboBox<String> cbDish =
-            styledCombo(new String[]{"кофе", "чай", "медовуха"});
-    private final JSpinner spQty =
-            styledSpinner(new SpinnerNumberModel(1, 1, 99, 1));
-    private final JComboBox<String> cbMod =
-            styledCombo(new String[]{"milk", "sugar", "cream", "cinnamon"});
+    private final JTextField tfGuest = styledField("Довакин");
+    private final JSpinner spQty = styledSpinner(new SpinnerNumberModel(1, 1, 99, 1));
+    private static final String[][] MOD_ENTRIES = {
+            {"Огненный соус (+40 сеп.)",          "fire_sauce"},
+            {"Двойная порция оленины (+20 сеп.)", "double_deer"},
+            {"Снежные ягоды (+6 сеп.)",           "snow_berries"},
+            {"Нордская лепёшка (+7 сеп.)",        "nordic_bread"},
+    };
+    private final JComboBox<String> cbMod = styledCombo(
+            Arrays.stream(MOD_ENTRIES).map(e -> e[0]).toArray(String[]::new));
     private final JTextField tfItemId = styledField("");
 
     private int selectedOrderId = -1;
@@ -62,25 +66,22 @@ public class GuiClient extends JFrame {
             }
         };
         ordersTable = styledTable(ordersModel);
-        ordersTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) loadItemsForSelected();
-        });
+        ordersTable.getSelectionModel().addListSelectionListener(
+                e -> {
+                    if (!e.getValueIsAdjusting()) loadItemsForSelected();
+                });
 
         itemsModel = new DefaultTableModel(
-                new String[]{"ID", "Напиток", "Цена/ед", "Кол-во", "Добавки", "Итого"}, 0) {
+                new String[]{"ID", "Блюдо", "Цена/ед", "Кол-во", "Добавки", "Итого"}, 0) {
             public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
         itemsTable = styledTable(itemsModel);
-
         itemsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int row = itemsTable.getSelectedRow();
-                if (row >= 0) {
-                    String itemId = itemsModel.getValueAt(row, 0).toString();
-                    tfItemId.setText(itemId);
-                }
+                if (row >= 0) tfItemId.setText(itemsModel.getValueAt(row, 0).toString());
             }
         });
 
@@ -101,7 +102,7 @@ public class GuiClient extends JFrame {
 
     private JPanel buildLeftPanel() {
         JPanel p = darkPanel();
-        p.setPreferredSize(new Dimension(240, 0));
+        p.setPreferredSize(new Dimension(250, 0));
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -109,60 +110,37 @@ public class GuiClient extends JFrame {
         p.add(labeledRow("Стол (1-20):", tfTable));
         p.add(labeledRow("Гость:", tfGuest));
         p.add(Box.createVerticalStrut(6));
-        p.add(accentButton("Создать заказ", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                createOrder();
-            }
-        }));
+        p.add(accentButton("Создать заказ", e -> createOrder()));
 
         p.add(Box.createVerticalStrut(16));
-        p.add(sectionLabel("🍺 Добавить напиток"));
-        p.add(labeledRow("Напиток:", cbDish));
+        p.add(sectionLabel("🍲 Нордское рагу (50 сеп.)"));
         p.add(labeledRow("Кол-во:", spQty));
         p.add(Box.createVerticalStrut(6));
-        btnAddDish = accentButton("Добавить в заказ", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addDish();
-            }
-        });
+        btnAddDish = accentButton("Добавить в заказ", e -> addDish());
         p.add(btnAddDish);
 
         p.add(Box.createVerticalStrut(16));
         p.add(sectionLabel("✨ Добавка к позиции"));
-
-        JLabel hintLabel = new JLabel("  ← кликни на позицию в таблице");
-        hintLabel.setForeground(TEXT_DIM);
-        hintLabel.setFont(hintLabel.getFont().deriveFont(Font.ITALIC, 10f));
-        hintLabel.setAlignmentX(LEFT_ALIGNMENT);
-        p.add(hintLabel);
+        JLabel hint = new JLabel("кликни на позицию в таблице");
+        hint.setForeground(TEXT_DIM);
+        hint.setFont(hint.getFont().deriveFont(Font.ITALIC, 10f));
+        hint.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(hint);
         p.add(labeledRow("ID позиции:", tfItemId));
         p.add(labeledRow("Добавка:", cbMod));
         p.add(Box.createVerticalStrut(6));
-        btnAddMod = accentButton("Применить добавку", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addMod();
-            }
-        });
+        btnAddMod = accentButton("Применить добавку", e -> addMod());
         p.add(btnAddMod);
 
         p.add(Box.createVerticalStrut(16));
         p.add(sectionLabel("✅ Подтверждение"));
-        btnConfirm = accentButton("Подтвердить заказ", SUCCESS, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                confirmOrder();
-            }
-        });
+        btnConfirm = accentButton("Подтвердить заказ", SUCCESS, e -> confirmOrder());
         p.add(btnConfirm);
 
         p.add(Box.createVerticalStrut(16));
-        p.add(dimButton("🔄 Обновить список", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                refreshOrders();
-            }
-        }));
+        p.add(dimButton("🔄 Обновить список", e -> refreshOrders()));
 
         p.add(Box.createVerticalGlue());
-
         updateButtonStates(true);
         return p;
     }
@@ -175,19 +153,19 @@ public class GuiClient extends JFrame {
         JPanel top = darkPanel();
         top.setLayout(new BorderLayout());
         top.add(sectionLabel("📦 Заказы"), BorderLayout.NORTH);
-        JScrollPane topScroll = new JScrollPane(ordersTable);
-        topScroll.getViewport().setBackground(PANEL_BG);
-        topScroll.setBorder(BorderFactory.createLineBorder(ACCENT2));
-        top.add(topScroll, BorderLayout.CENTER);
+        JScrollPane ts = new JScrollPane(ordersTable);
+        ts.getViewport().setBackground(PANEL_BG);
+        ts.setBorder(BorderFactory.createLineBorder(ACCENT2));
+        top.add(ts, BorderLayout.CENTER);
 
         JPanel bot = darkPanel();
         bot.setLayout(new BorderLayout());
         selectedLabel = sectionLabel("🥤 Позиции (выберите заказ)");
         bot.add(selectedLabel, BorderLayout.NORTH);
-        JScrollPane botScroll = new JScrollPane(itemsTable);
-        botScroll.getViewport().setBackground(PANEL_BG);
-        botScroll.setBorder(BorderFactory.createLineBorder(ACCENT2));
-        bot.add(botScroll, BorderLayout.CENTER);
+        JScrollPane bs = new JScrollPane(itemsTable);
+        bs.getViewport().setBackground(PANEL_BG);
+        bs.setBorder(BorderFactory.createLineBorder(ACCENT2));
+        bot.add(bs, BorderLayout.CENTER);
 
         p.add(top);
         p.add(bot);
@@ -201,10 +179,10 @@ public class GuiClient extends JFrame {
                 new MatteBorder(1, 0, 0, 0, ACCENT2),
                 new EmptyBorder(4, 6, 4, 6)));
         p.setPreferredSize(new Dimension(0, 110));
-        JLabel logLabel = new JLabel("  Лог запросов", JLabel.LEFT);
-        logLabel.setForeground(ACCENT);
-        logLabel.setFont(logLabel.getFont().deriveFont(Font.BOLD));
-        p.add(logLabel, BorderLayout.NORTH);
+        JLabel lbl = new JLabel("  Лог запросов", JLabel.LEFT);
+        lbl.setForeground(ACCENT);
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+        p.add(lbl, BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(logArea);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(new Color(0x1A0F05));
@@ -212,23 +190,16 @@ public class GuiClient extends JFrame {
         return p;
     }
 
-    private void updateButtonStates(boolean isConfirmed) {
-        btnConfirm.setEnabled(!isConfirmed);
-        btnAddDish.setEnabled(!isConfirmed);
-        btnAddMod.setEnabled(!isConfirmed);
+    private void updateButtonStates(boolean confirmed) {
+        btnConfirm.setEnabled(!confirmed);
+        btnAddDish.setEnabled(!confirmed);
+        btnAddMod.setEnabled(!confirmed);
     }
 
-    // REST-методы
     private void refreshOrders() {
-        new Thread(new Runnable() {
-            public void run() {
-                final String json = get("/orders");
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        populateOrders(json);
-                    }
-                });
-            }
+        new Thread(() -> {
+            String json = get("/orders");
+            SwingUtilities.invokeLater(() -> populateOrders(json));
         }).start();
     }
 
@@ -239,18 +210,14 @@ public class GuiClient extends JFrame {
             log("Введите номер стола");
             return;
         }
-        final String body = "{\"table_number\":" + table +
-                (guest.isEmpty() ? "" : ",\"guest_name\":\"" + guest + "\"") + "}";
-        new Thread(new Runnable() {
-            public void run() {
-                final String res = post("/orders", body);
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        log("POST /orders → " + res);
-                        refreshOrders();
-                    }
-                });
-            }
+        String body = "{\"table_number\":" + table
+                + (guest.isEmpty() ? "" : ",\"guest_name\":\"" + guest + "\"") + "}";
+        new Thread(() -> {
+            String res = post("/orders", body);
+            SwingUtilities.invokeLater(() -> {
+                log("POST /orders → " + res);
+                refreshOrders();
+            });
         }).start();
     }
 
@@ -259,20 +226,15 @@ public class GuiClient extends JFrame {
             log("Выберите заказ в таблице");
             return;
         }
-        final String dish = (String) cbDish.getSelectedItem();
-        final int qty = (int) spQty.getValue();
-        final String body = "{\"dish_name\":\"" + dish + "\",\"quantity\":" + qty + "}";
-        final int oid = selectedOrderId;
-        new Thread(new Runnable() {
-            public void run() {
-                final String res = post("/orders/" + oid + "/dishes", body);
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        log("POST /orders/" + oid + "/dishes → " + res);
-                        refreshOrders();
-                    }
-                });
-            }
+        int qty = (int) spQty.getValue();
+        int oid = selectedOrderId;
+        String body = "{\"quantity\":" + qty + "}";
+        new Thread(() -> {
+            String res = post("/orders/" + oid + "/dishes", body);
+            SwingUtilities.invokeLater(() -> {
+                log("POST /orders/" + oid + "/dishes → " + res);
+                refreshOrders();
+            });
         }).start();
     }
 
@@ -281,26 +243,21 @@ public class GuiClient extends JFrame {
             log("Выберите заказ");
             return;
         }
-        final String itemIdStr = tfItemId.getText().trim();
+        String itemIdStr = tfItemId.getText().trim();
         if (itemIdStr.isEmpty()) {
             log("Кликните на позицию в нижней таблице");
             return;
         }
-        final String mod = (String) cbMod.getSelectedItem();
-        final int oid = selectedOrderId;
-        final String body = "{\"modification_type\":\"" + mod + "\"}";
-        new Thread(new Runnable() {
-            public void run() {
-                final String res = post(
-                        "/orders/" + oid + "/dishes/" + itemIdStr + "/modifications", body);
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        log("POST /orders/" + oid + "/dishes/"
-                                + itemIdStr + "/modifications → " + res);
-                        refreshOrders();
-                    }
-                });
-            }
+        int idx = cbMod.getSelectedIndex();
+        String mod = MOD_ENTRIES[idx][1];
+        int oid = selectedOrderId;
+        String body = "{\"modification_type\":\"" + mod + "\"}";
+        new Thread(() -> {
+            String res = post("/orders/" + oid + "/dishes/" + itemIdStr + "/modifications", body);
+            SwingUtilities.invokeLater(() -> {
+                log("POST /orders/" + oid + "/dishes/" + itemIdStr + "/modifications → " + res);
+                refreshOrders();
+            });
         }).start();
     }
 
@@ -309,18 +266,14 @@ public class GuiClient extends JFrame {
             log("Выберите заказ");
             return;
         }
-        final int oid = selectedOrderId;
+        int oid = selectedOrderId;
         updateButtonStates(true);
-        new Thread(new Runnable() {
-            public void run() {
-                final String res = post("/orders/" + oid + "/confirm", "{}");
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        log("POST /orders/" + oid + "/confirm → " + res);
-                        refreshOrders();
-                    }
-                });
-            }
+        new Thread(() -> {
+            String res = post("/orders/" + oid + "/confirm", "{}");
+            SwingUtilities.invokeLater(() -> {
+                log("POST /orders/" + oid + "/confirm → " + res);
+                refreshOrders();
+            });
         }).start();
     }
 
@@ -339,7 +292,7 @@ public class GuiClient extends JFrame {
                     o.getOrDefault("table_number", ""),
                     o.getOrDefault("guest_name", ""),
                     o.getOrDefault("status", ""),
-                    o.getOrDefault("total_price", "") + " зол.",
+                    o.getOrDefault("total_price", "") + " сеп.",
                     o.getOrDefault("created_at", "").replace("T", " ")
             });
         }
@@ -347,11 +300,9 @@ public class GuiClient extends JFrame {
 
         if (selectedOrderId > 0) {
             for (int r = 0; r < ordersModel.getRowCount(); r++) {
-                if (ordersModel.getValueAt(r, 0).toString()
-                        .equals(String.valueOf(selectedOrderId))) {
+                if (ordersModel.getValueAt(r, 0).toString().equals(String.valueOf(selectedOrderId))) {
                     ordersTable.setRowSelectionInterval(r, r);
-                    String status = ordersModel.getValueAt(r, 3).toString();
-                    updateButtonStates("confirmed".equals(status));
+                    updateButtonStates("confirmed".equals(ordersModel.getValueAt(r, 3).toString()));
                     break;
                 }
             }
@@ -361,45 +312,36 @@ public class GuiClient extends JFrame {
     private void loadItemsForSelected() {
         int row = ordersTable.getSelectedRow();
         if (row < 0) return;
-        selectedOrderId = Integer.parseInt(
-                ordersModel.getValueAt(row, 0).toString());
-        selectedLabel.setText("🥤 Позиции заказа #" + selectedOrderId);
+        selectedOrderId = Integer.parseInt(ordersModel.getValueAt(row, 0).toString());
+        selectedLabel.setText("☕️ Позиции заказа #" + selectedOrderId);
         itemsModel.setRowCount(0);
         tfItemId.setText("");
+        updateButtonStates("confirmed".equals(ordersModel.getValueAt(row, 3).toString()));
 
-        String status = ordersModel.getValueAt(row, 3).toString();
-        updateButtonStates("confirmed".equals(status));
-
-        final int oid = selectedOrderId;
-        new Thread(new Runnable() {
-            public void run() {
-                final String json = get("/orders");
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        String itemsJson = extractItems(json, oid);
-                        if (itemsJson == null) return;
-                        List<Map<String, String>> items = parseJsonArray(itemsJson);
-                        for (Map<String, String> i : items) {
-                            itemsModel.addRow(new Object[]{
-                                    i.getOrDefault("id", ""),
-                                    i.getOrDefault("dish_name", ""),
-                                    i.getOrDefault("unit_price", "") + " зол.",
-                                    i.getOrDefault("quantity", ""),
-                                    i.getOrDefault("modifications", ""),
-                                    i.getOrDefault("total_price", "") + " зол."
-                            });
-                        }
-                    }
-                });
-            }
+        int oid = selectedOrderId;
+        new Thread(() -> {
+            String json = get("/orders");
+            SwingUtilities.invokeLater(() -> {
+                String itemsJson = extractItems(json, oid);
+                if (itemsJson == null) return;
+                for (Map<String, String> i : parseJsonArray(itemsJson)) {
+                    itemsModel.addRow(new Object[]{
+                            i.getOrDefault("id", ""),
+                            i.getOrDefault("dish_name", ""),
+                            i.getOrDefault("unit_price", "") + " сеп.",
+                            i.getOrDefault("quantity", ""),
+                            i.getOrDefault("modifications", ""),
+                            i.getOrDefault("total_price", "") + " сеп."
+                    });
+                }
+            });
         }).start();
     }
 
-    // HTTP-утилиты
+    // HTTP
     private String get(String path) {
         try {
-            HttpURLConnection c = (HttpURLConnection)
-                    new URL(BASE + path).openConnection();
+            HttpURLConnection c = (HttpURLConnection) new URL(BASE + path).openConnection();
             c.setRequestMethod("GET");
             c.setRequestProperty("Accept", "application/json");
             return readResponse(c);
@@ -410,8 +352,7 @@ public class GuiClient extends JFrame {
 
     private String post(String path, String body) {
         try {
-            HttpURLConnection c = (HttpURLConnection)
-                    new URL(BASE + path).openConnection();
+            HttpURLConnection c = (HttpURLConnection) new URL(BASE + path).openConnection();
             c.setRequestMethod("POST");
             c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             c.setDoOutput(true);
@@ -425,11 +366,9 @@ public class GuiClient extends JFrame {
     }
 
     private String readResponse(HttpURLConnection c) throws IOException {
-        InputStream is = c.getResponseCode() < 400
-                ? c.getInputStream() : c.getErrorStream();
+        InputStream is = c.getResponseCode() < 400 ? c.getInputStream() : c.getErrorStream();
         if (is == null) return "{}";
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = r.readLine()) != null) sb.append(line);
@@ -439,7 +378,7 @@ public class GuiClient extends JFrame {
 
     // JSON-парсер
     private List<Map<String, String>> parseJsonArray(String json) {
-        List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> result = new ArrayList<>();
         if (json == null || json.trim().isEmpty()) return result;
         int depth = 0, start = -1;
         for (int i = 0; i < json.length(); i++) {
@@ -457,19 +396,15 @@ public class GuiClient extends JFrame {
     }
 
     private Map<String, String> parseJsonObject(String obj) {
-        Map<String, String> m = new LinkedHashMap<String, String>();
+        Map<String, String> m = new LinkedHashMap<>();
         Matcher scalar = Pattern.compile(
-                "\"(\\w+)\"\\s*:\\s*(?:\"([^\"]*)\"|(-?\\d+(?:\\.\\d+)?)|null)")
-                .matcher(obj);
+                "\"(\\w+)\"\\s*:\\s*(?:\"([^\"]*)\"|(-?\\d+(?:\\.\\d+)?)|null)").matcher(obj);
         while (scalar.find()) {
-            String key = scalar.group(1);
-            String val = scalar.group(2) != null ? scalar.group(2)
-                    : scalar.group(3) != null ? scalar.group(3) : "";
-            m.put(key, val);
+            m.put(scalar.group(1),
+                    scalar.group(2) != null ? scalar.group(2)
+                            : scalar.group(3) != null ? scalar.group(3) : "");
         }
-        Matcher arrM = Pattern
-                .compile("\"modifications\"\\s*:\\s*\\[([^\\]]*)]")
-                .matcher(obj);
+        Matcher arrM = Pattern.compile("\"modifications\"\\s*:\\s*\\[([^\\]]*)]").matcher(obj);
         if (arrM.find()) {
             String inner = arrM.group(1).replaceAll("\"", "").trim();
             m.put("modifications", inner.isEmpty() ? "—" : inner);
@@ -478,8 +413,7 @@ public class GuiClient extends JFrame {
     }
 
     private String extractItems(String json, int orderId) {
-        Pattern p = Pattern.compile("\"id\"\\s*:\\s*" + orderId + "\\s*,");
-        Matcher m = p.matcher(json);
+        Matcher m = Pattern.compile("\"id\"\\s*:\\s*" + orderId + "\\s*,").matcher(json);
         if (!m.find()) return null;
         int start = json.lastIndexOf('{', m.start());
         int iStart = json.indexOf("\"items\"", start);
@@ -490,20 +424,18 @@ public class GuiClient extends JFrame {
         while (pos < json.length()) {
             char c = json.charAt(pos);
             if (c == '[') depth++;
-            else if (c == ']') {
-                if (--depth == 0) break;
-            }
+            else if (c == ']' && --depth == 0) break;
             pos++;
         }
         return json.substring(arrStart, pos + 1);
     }
 
-    // UI-утилиты
     private void log(String msg) {
         logArea.append(msg + "\n");
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
+    // UI-утилиты
     private static JPanel darkPanel() {
         JPanel p = new JPanel();
         p.setBackground(PANEL_BG);
@@ -532,7 +464,7 @@ public class GuiClient extends JFrame {
     }
 
     private static JComboBox<String> styledCombo(String[] items) {
-        JComboBox<String> cb = new JComboBox<String>(items);
+        JComboBox<String> cb = new JComboBox<>(items);
         cb.setBackground(new Color(0x1A0F05));
         cb.setForeground(TEXT);
         cb.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
@@ -544,19 +476,16 @@ public class GuiClient extends JFrame {
         sp.setBackground(new Color(0x1A0F05));
         sp.setForeground(TEXT);
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        ((JSpinner.DefaultEditor) sp.getEditor()).getTextField()
-                .setBackground(new Color(0x1A0F05));
-        ((JSpinner.DefaultEditor) sp.getEditor()).getTextField()
-                .setForeground(TEXT);
+        ((JSpinner.DefaultEditor) sp.getEditor()).getTextField().setBackground(new Color(0x1A0F05));
+        ((JSpinner.DefaultEditor) sp.getEditor()).getTextField().setForeground(TEXT);
         return sp;
     }
 
-    private static JTable styledTable(final DefaultTableModel model) {
+    private static JTable styledTable(DefaultTableModel model) {
         JTable t = new JTable(model) {
             public Component prepareRenderer(TableCellRenderer r, int row, int col) {
                 Component c = super.prepareRenderer(r, row, col);
-                c.setBackground(isCellSelected(row, col)
-                        ? ACCENT2 : (row % 2 == 0 ? TABLE_EVEN : TABLE_ODD));
+                c.setBackground(isCellSelected(row, col) ? ACCENT2 : (row % 2 == 0 ? TABLE_EVEN : TABLE_ODD));
                 c.setForeground(TEXT);
                 return c;
             }
@@ -569,17 +498,16 @@ public class GuiClient extends JFrame {
         t.setRowHeight(22);
         t.getTableHeader().setBackground(new Color(0x5A3010));
         t.getTableHeader().setForeground(ACCENT);
-        t.getTableHeader().setFont(
-                t.getTableHeader().getFont().deriveFont(Font.BOLD));
+        t.getTableHeader().setFont(t.getTableHeader().getFont().deriveFont(Font.BOLD));
         t.setFillsViewportHeight(true);
         return t;
     }
 
-    private static JButton accentButton(String text, ActionListener al) {
+    private static JButton accentButton(String text, java.awt.event.ActionListener al) {
         return accentButton(text, ACCENT2, al);
     }
 
-    private static JButton accentButton(String text, Color bg, ActionListener al) {
+    private static JButton accentButton(String text, Color bg, java.awt.event.ActionListener al) {
         JButton b = new JButton(text);
         b.setBackground(bg);
         b.setForeground(TEXT);
@@ -595,7 +523,7 @@ public class GuiClient extends JFrame {
         return b;
     }
 
-    private static JButton dimButton(String text, ActionListener al) {
+    private static JButton dimButton(String text, java.awt.event.ActionListener al) {
         JButton b = accentButton(text, new Color(0x4A3520), al);
         b.setForeground(TEXT_DIM);
         return b;
@@ -615,37 +543,26 @@ public class GuiClient extends JFrame {
         return row;
     }
 
-    // Endpoint
     public static void launch() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    UIManager.setLookAndFeel(
-                            UIManager.getCrossPlatformLookAndFeelClassName());
-                } catch (Exception ignored) {
-                }
-
-                UIManager.put("Button.background", new Color(0x8B4513));
-                UIManager.put("Button.foreground", new Color(0xF5DEB3));
-                UIManager.put("Button.focus", new Color(0, 0, 0, 0));
-                UIManager.put("Button.select", new Color(0x6B3410));
-                UIManager.put("Panel.background", new Color(0x3D2B1A));
-                UIManager.put("ScrollPane.background", new Color(0x3D2B1A));
-                UIManager.put("Viewport.background", new Color(0x3D2B1A));
-                UIManager.put("ComboBox.background", new Color(0x1A0F05));
-                UIManager.put("ComboBox.foreground", new Color(0xF5DEB3));
-                UIManager.put("ComboBox.selectionBackground", new Color(0x8B4513));
-                UIManager.put("ComboBox.selectionForeground", new Color(0xF5DEB3));
-                UIManager.put("Spinner.background", new Color(0x1A0F05));
-                UIManager.put("TextField.background", new Color(0x1A0F05));
-                UIManager.put("TextField.foreground", new Color(0xF5DEB3));
-                UIManager.put("TextField.caretForeground", new Color(0xC8973A));
-                UIManager.put("TextArea.background", new Color(0x1A0F05));
-                UIManager.put("TextArea.foreground", new Color(0xA08060));
-                UIManager.put("Label.foreground", new Color(0xF5DEB3));
-
-                new GuiClient().setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            } catch (Exception ignored) {
             }
+            UIManager.put("Button.background", new Color(0x8B4513));
+            UIManager.put("Button.foreground", new Color(0xF5DEB3));
+            UIManager.put("Panel.background", new Color(0x3D2B1A));
+            UIManager.put("ScrollPane.background", new Color(0x3D2B1A));
+            UIManager.put("ComboBox.background", new Color(0x1A0F05));
+            UIManager.put("ComboBox.foreground", new Color(0xF5DEB3));
+            UIManager.put("ComboBox.selectionBackground", new Color(0x8B4513));
+            UIManager.put("ComboBox.selectionForeground", new Color(0xF5DEB3));
+            UIManager.put("TextField.background", new Color(0x1A0F05));
+            UIManager.put("TextField.foreground", new Color(0xF5DEB3));
+            UIManager.put("TextArea.background", new Color(0x1A0F05));
+            UIManager.put("TextArea.foreground", new Color(0xA08060));
+            UIManager.put("Label.foreground", new Color(0xF5DEB3));
+            new GuiClient().setVisible(true);
         });
     }
 }

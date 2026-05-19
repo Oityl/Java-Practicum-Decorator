@@ -1,7 +1,5 @@
 package com.company.model;
 
-import com.company.model.Drink;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,13 +8,13 @@ public class OrderItem {
     private static int idSequence = 1;
 
     private final int id;
-    private Drink drink;
+    private Dish dish;
     private int quantity;
     private final List<String> appliedModNames;
 
-    public OrderItem(Drink drink, int quantity) {
+    public OrderItem(Dish dish, int quantity) {
         this.id = idSequence++;
-        this.drink = drink;
+        this.dish = dish;
         this.quantity = quantity;
         this.appliedModNames = new ArrayList<>();
     }
@@ -25,8 +23,8 @@ public class OrderItem {
         return id;
     }
 
-    public Drink getDrink() {
-        return drink;
+    public Dish getDish() {
+        return dish;
     }
 
     public int getQuantity() {
@@ -34,28 +32,33 @@ public class OrderItem {
     }
 
     public String getDishName() {
-        return drink.getName();
+        return dish.getName();
     }
 
     public int getUnitPrice() {
-        return drink.getPrice();
+        return dish.getPrice();
     }
 
     public int getTotalPrice() {
-        return drink.getPrice() * quantity;
+        return dish.getPrice() * quantity;
     }
 
     public int getAddonCount() {
-        return drink.getAddonCount();
+        return dish.getAddonCount();
     }
 
     public List<String> getAppliedModNames() {
         return appliedModNames;
     }
 
-    public void setDrink(Drink drink) {
-        this.drink = drink;
+    public void setDish(Dish dish) {
+        this.dish = dish;
         this.appliedModNames.clear();
+    }
+
+    public void applyAddon(Dish decorated, String modName) {
+        this.dish = decorated;
+        this.appliedModNames.add(modName);
     }
 
     public void setQuantity(int quantity) {

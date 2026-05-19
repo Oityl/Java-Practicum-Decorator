@@ -30,13 +30,13 @@ public class OrderRepository {
         return new ArrayList<>(store.values());
     }
 
+    public boolean delete(int id) {
+        return store.remove(id) != null;
+    }
+
     public List<Order> findByStatus(Order.Status status) {
         return store.values().stream()
                 .filter(o -> o.getStatus() == status)
                 .collect(Collectors.toList());
-    }
-
-    public boolean delete(int id) {
-        return store.remove(id) != null;
     }
 }
